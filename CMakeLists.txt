@@ -19,24 +19,25 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
 # executables
-add_executable(fbg_talker src/fbg_talker.cpp src/interrogator.cpp)
-target_include_directories(fbg_talker PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(fbg_talker rclcpp std_srvs)
+# add_executable(fbg_talker src/fbg_talker.cpp src/interrogator.cpp)
+# target_include_directories(fbg_talker PUBLIC
+#  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#  $<INSTALL_INTERFACE:include>)
+# ament_target_dependencies(fbg_talker rclcpp std_srvs std_msgs)
 
-add_executable(fbg_demo src/fbg_demo.cpp)
+add_executable(fbg_demo src/fbg_demo.cpp src/FBGInterrogatorNodeInterface.cpp)
 target_include_directories(fbg_demo PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-  ament_target_dependencies(fbg_demo rclcpp std_srvs)
+  ament_target_dependencies(fbg_demo rclcpp std_srvs std_msgs)
 
-install(TARGETS fbg_talker
+install(TARGETS fbg_demo
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

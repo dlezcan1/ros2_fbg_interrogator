@@ -1,10 +1,11 @@
 #pragma once
 #include "fbg_interrogator/FBGInterrogatorNodeInterface.h"
 
-class FBGDemoPublisher : FBGInterrogatorNodeInterface
+class FBGDemoPublisher : public FBGInterrogatorNodeInterface
 {
     public:
-        FBGDemoPublisher(const char* name="fbg_demo", int num_chs=3, int num_aas=4);
+        FBGDemoPublisher(const char* name = "FBGDemo", int num_chs = 3, int num_aas = 4);
+        ~FBGDemoPublisher();
 
         /**
          * Connect to the FBG interrogator
@@ -27,6 +28,13 @@ class FBGDemoPublisher : FBGInterrogatorNodeInterface
         
     protected:
         int num_active_areas;
+
+        rclcpp::TimerBase::SharedPtr pub_peak_timer;
+        rclcpp::TimerBase::SharedPtr conn_peak_timer;
+
+    private:
+        rclcpp::CallbackGroup::SharedPtr pub_cb_grp;
+        rclcpp::CallbackGroup::SharedPtr srv_cb_grp;
        
 
         

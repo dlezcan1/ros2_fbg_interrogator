@@ -12,12 +12,17 @@
 
 #define PARAM_INTERROGATOR_IP "interrogator.ip_address"
 #define PARAM_SENSOR_NUM_SAMPLES "sensor.num_samples"
+#define TOPIC_SENSOR_RAW "sensor/raw"
+#define TOPIC_SENSOR_PRC "sensor/processed"
+#define TOPIC_INTERR_CONN "interrogator/connected"
+#define SERVICE_CALIBRATE "sensor/calibrate"
+#define SERVICE_RECONNECT "interrogator/reconnect"
 
 class FBGInterrogatorNodeInterface : public rclcpp::Node
 {
     public:
-        FBGInterrogatorNodeInterface(const char* name, int num_chs = 3);
-        virtual ~FBGInterrogatorNodeInterface();
+        FBGInterrogatorNodeInterface(const char* name, int num_chs);
+        //virtual ~FBGInterrogatorNodeInterface();
         /**
          * Connect to the FBG interrogator
          * 

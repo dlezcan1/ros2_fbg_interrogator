@@ -1,8 +1,12 @@
 #include "fbg_interrogator/FBGInterrogatorNodeInterface.h"
 
+#include <thread>
+
+#include <rclcpp/executor.hpp>
+
 using namespace Eigen;
 
-FBGInterrogatorNodeInterface::FBGInterrogatorNodeInterface(const char* name, int num_chs = 3):
+FBGInterrogatorNodeInterface::FBGInterrogatorNodeInterface(const char* name, int num_chs):
     Node(name), num_channels(num_chs)
 {
     // declare the parameters
@@ -14,13 +18,14 @@ FBGInterrogatorNodeInterface::FBGInterrogatorNodeInterface(const char* name, int
 PeakContainer FBGInterrogatorNodeInterface::msgToPeaks(const std_msgs::msg::Float64MultiArray& msg)
 {
     PeakContainer peaks;
-    int dim_idx = 0;
-    int ch_size = msg.layout.dim[dim_idx].size;
-    auto temp = msg.data.data();
-    for (int i = 0; i < msg.data.size(); i++)
+    for (int ch = 0; ch < peaks.size(); ch++)
     {
-        
-    }
+        for (int j = 0; j < msg.layout.dim[ch].size; j++)
+            peaks[ch].push_back(msg.data[ch*peaks.size() + j]);
+            
+    } // for
+
+    return peaks;
 
 } // FBGInterrogatorNodeInterface::msgToPeaks
 
@@ -33,9 +38,9 @@ MatrixXd FBGInterrogatorNodeInterface::peaksToMatrixXd(const PeakContainer& peak
         for (double p : peaks[i])
             temp.push_back(p);
     
-    auto temp2 = temp.data();
-    MatrixXd peaks_mat(temp.data());
-    peaks_mat.resize(num_chs, num_aas);
+    
+    MatrixXd peaks_mat = Map<MatrixXd>(temp.data(), num_aas, num_chs);
+    peaks_mat.transposeInPlace();
     
     return peaks_mat;
     
@@ -62,7 +67,7 @@ std_msgs::msg::Float64MultiArray FBGInterrogatorNodeInterface::peaksToMsg(const 
         message.layout.dim.push_back(std_msgs::msg::MultiArrayDimension());
         message.layout.dim[i].size = peaks[i].size();
         message.layout.dim[i].stride = 1;
-        message.layout.dim[i].label = "CH" + std::to_string(i);
+        message.layout.dim[i].label = "CH" + std::to_string(i + 1);
         
         // push back the peak data
         for (double peak : peaks[i])
@@ -95,7 +100,7 @@ void FBGInterrogatorNodeInterface::srvReconnectCallback(const std::shared_ptr<st
     
 } // FBGInterrogatorNodeInterface::srvReconnectCallback
 
-PeakContainer FBGInterrogatorNodeInterface::processPeaks(const PeakContainer& peaks, const PeakContainer& ref_peaks, bool temp_comp = false)
+PeakContainer FBGInterrogatorNodeInterface::processPeaks(const PeakContainer& peaks, const PeakContainer& ref_peaks, bool temp_comp)
 {
     PeakContainer proc_peaks;
 
@@ -155,43 +160,57 @@ PeakContainer FBGInterrogatorNodeInterface::processPeaks(const PeakContainer& pe
 void FBGInterrogatorNodeInterface::srvSensorCalibrateCallback(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
                                                               const std::shared_ptr<std_srvs::srv::Trigger::Response> res)
 {
-    auto temp_node = rclcpp::Node::make_shared("TempSignalSubscriber");
+    rclcpp::Node::SharedPtr temp_node = rclcpp::Node::make_shared("TempSignalSubscriber");
+    
+    RCLCPP_INFO(this->get_logger(), "Performing calibration of sensor.");
     
     // initalize subsciber parameters
     MatrixXd update_data; // reference data
     int num_aas = -1;
     int counter = 0;
-    auto  calibrate = [&update_data, &num_aas, &counter, this](const std_msgs::msg::Float64MultiArray msg){
+    auto calibrate = [&, temp_node, this](const std_msgs::msg::Float64MultiArray::UniquePtr msg){
+        RCLCPP_DEBUG(temp_node->get_logger(), "Calibrate Counter %d", counter);
         if (num_aas <= 0)
         {
-            num_aas = msg.layout.dim.size();
+            num_aas = msg->layout.dim.size();
+            RCLCPP_DEBUG(temp_node->get_logger(), "Calibration Detected # AAs %d", num_aas);
             update_data = MatrixXd::Zero(num_channels, num_aas);
-        
+            
         } // if
 
-        update_data += peaksToMatrixXd(msgToPeaks(msg), num_channels, num_aas);
+        update_data += peaksToMatrixXd(msgToPeaks(*msg), num_channels, num_aas);
         counter++;
-
+        
     }; // calibrate lambda
     
     // create the subscriber
+    RCLCPP_INFO(temp_node->get_logger(), "Subscribing to topic: %s", raw_pub->get_topic_name());
     auto temp_raw_sub = temp_node->create_subscription<std_msgs::msg::Float64MultiArray>(raw_pub->get_topic_name(), 10, calibrate);
     
     // run the subscriber and perform the calibration
     int num_samples; // number of samples to get
     this->get_parameter(PARAM_SENSOR_NUM_SAMPLES, num_samples);
-
+    
     while (counter < num_samples)
+    {
+    //    RCLCPP_INFO(temp_node->get_logger(), "Calibrate Counter %d", counter);
         rclcpp::spin_some(temp_node);
+        
+    } // while
 
     update_data /= (float) counter; // perform the averaging
     ref_peaks = matrixXdToPeaks(update_data); // set the reference peaks
+    std::cout << "Reference Peaks:" << std::endl << update_data << std::endl;
 
     // release the temporary node
     temp_raw_sub.reset();
     temp_node.reset();
 
+    this->calibrated = true;
+
     res->message = "Sensors calibrated.";
     res->success = true;
+
+    RCLCPP_INFO(this->get_logger(), "Calibration completed.");
     
 } // FBGInterrogatorNodeInterface::srvSensorCalibrateCallback

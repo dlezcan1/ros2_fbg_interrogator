@@ -32,6 +32,7 @@ class FBGDemoPublisher : public FBGInterrogatorNodeInterface
         rclcpp::TimerBase::SharedPtr pub_peak_timer;
         rclcpp::TimerBase::SharedPtr conn_peak_timer;
 
+        
     private:
         rclcpp::CallbackGroup::SharedPtr pub_cb_grp;
         rclcpp::CallbackGroup::SharedPtr srv_cb_grp;

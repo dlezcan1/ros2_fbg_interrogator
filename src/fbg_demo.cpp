@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/executor.hpp>
 
 
@@ -28,6 +29,9 @@ FBGDemoPublisher::FBGDemoPublisher(const char* name,int num_chs, int num_aas) :
     // start the services
     calibrate_srv = this->create_service<std_srvs::srv::Trigger>(SERVICE_CALIBRATE, 
                                                                 std::bind(&FBGDemoPublisher::srvSensorCalibrateCallback, this, _1, _2),
+                                                                ::rmw_qos_profile_default, srv_cb_grp);
+    reconnect_srv = this->create_service<std_srvs::srv::Trigger>(SERVICE_RECONNECT,
+                                                                std::bind(&FBGDemoPublisher::srvReconnectCallback, this, _1, _2),
                                                                 ::rmw_qos_profile_default, srv_cb_grp);
 
     // start publishing timers
@@ -88,7 +92,6 @@ void FBGDemoPublisher::publishPeaks()
     } // if
 
 } // publishPeaks
-
 
 int main(int argc, char** argv)
 {   

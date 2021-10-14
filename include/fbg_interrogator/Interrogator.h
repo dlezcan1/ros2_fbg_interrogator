@@ -1,4 +1,4 @@
-#ifndef _INTERROGATOR_H
+#pragma once
 #define _INTERROGATOR_H
 
 #include <vector>
@@ -25,7 +25,7 @@
   #define HOST_PORT 51692 // TODO
 #else
   #define HOST_IP ""
-  #define HOST_POST 0
+  #define HOST_PORT 0
 #endif
 
 /*!
@@ -183,5 +183,3 @@ protected:
   void send(const std::string &command);
 
 };
-
-#endif // _INTERROGATOR_H

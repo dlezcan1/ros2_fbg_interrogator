@@ -36,7 +36,7 @@ FBGDemoPublisher::FBGDemoPublisher(const char* name,int num_chs, int num_aas) :
 
     // start publishing timers
     pub_peak_timer  = this->create_wall_timer(10ms, std::bind(&FBGDemoPublisher::publishPeaks, this));
-    conn_peak_timer = this->create_wall_timer(50ms, std::bind(&FBGDemoPublisher::publishConnected, this));
+    pub_conn_timer  = this->create_wall_timer(50ms, std::bind(&FBGDemoPublisher::publishConnected, this));
 
     RCLCPP_INFO(this->get_logger(), "Running FBG demo.");
 

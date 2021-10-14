@@ -132,7 +132,7 @@ bool Interrogator::getDataUnbuffered()
   return read();
 }
 
-bool interrogator::read()
+bool Interrogator::read()
 {  
   // initialize the msg buffer to 0
   for (int i = 0; i < 132; i++) {
@@ -209,7 +209,7 @@ bool interrogator::read()
   return msgLenReceived > 0;
 }
 
-void interrogator::extractPeaks()
+void Interrogator::extractPeaks()
 {
   // The peaks are organized after the header information
   // the header identifies the number of peaks per channel,
@@ -241,9 +241,9 @@ void interrogator::extractPeaks()
     } // for
   } // for
 
-} // interrogator::extractPeaks
+} // Interrogator::extractPeaks
 
-unsigned short interrogator::getNumPeaks(char *buf)
+unsigned short Interrogator::getNumPeaks(char *buf)
 {
   union dutStatus d;
 
@@ -254,7 +254,7 @@ unsigned short interrogator::getNumPeaks(char *buf)
   return d.val;
 }
 
-double interrogator::getPeak(char *buf)
+double Interrogator::getPeak(char *buf)
 {
   union peaks p;
   
@@ -267,7 +267,7 @@ double interrogator::getPeak(char *buf)
   return p.val/1e6;
 }
 
-void interrogator::setGain(int channel, int gain)
+void Interrogator::setGain(int channel, int gain)
 {
   std::stringstream s;
   s << "#SET_CH_GAIN_DB " << std::noboolalpha << channel << " " << gain 
@@ -282,7 +282,7 @@ void interrogator::setGain(int channel, int gain)
   read();
 }
 
-void interrogator::setThreshold(int threshold)
+void Interrogator::setThreshold(int threshold)
 {
   for(int channel=0 ; channel<peaks.size() ; channel++)
   {
@@ -300,7 +300,7 @@ void interrogator::setThreshold(int threshold)
 
 }
 
-std::vector<double> interrogator::getUnpackedPeaks()
+std::vector<double> Interrogator::getUnpackedPeaks()
 {
   // unpacking channel 1 <- 4
   //                   2 <- 2
@@ -316,13 +316,13 @@ std::vector<double> interrogator::getUnpackedPeaks()
   return unpackedPeaks;
 }
 
-void interrogator::send(const std::string &command)
+void Interrogator::send(const std::string &command)
 {
   socket.send(boost::asio::buffer(command));
 
-} // interrogator::send
+} // Interrogator::send
 
-void interrogator::setTimeout(const int timeout_msec)
+void Interrogator::setTimeout(const int timeout_msec)
 {
   timeout = timeout_msec;
   boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeo(timeout);
@@ -330,9 +330,9 @@ void interrogator::setTimeout(const int timeout_msec)
   socket.set_option(rcv_timeo);
   socket.set_option(snd_timeo);
 
-} // interrogator::setTimeout
+} // Interrogator::setTimeout
 
-//void interrogator::Run()
+//void Interrogator::Run()
 //{
 //  ProcessQueuedCommands();
 //  ProcessQueuedEvents();

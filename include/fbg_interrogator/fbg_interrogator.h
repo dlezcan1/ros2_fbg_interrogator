@@ -1,18 +1,29 @@
 #pragma once
-#include "fbg_interrogator/FBGInterrogatorNodeInterface.h"
-#include "fbg_interrogator/Interrogator.h"
 
-class FBGDemoPublisher : public FBGInterrogatorNodeInterface
+#define SM_130 // the interrogator version
+
+#include "fbg_interrogator/FBGInterrogatorNodeInterface.h"
+#include "fbg_interrogator/interrogator.h"
+
+
+
+class FBGInterrogator : public FBGInterrogatorNodeInterface
 {
     public:
-        FBGDemoPublisher(const char* name = "FBGDemo", int num_chs = 3, int num_aas = 4);
-        ~FBGDemoPublisher();
+        FBGInterrogator(const char* name = "FBGInterrogator", int num_chs = 4);
+        ~FBGInterrogator();
 
         /**
          * Connect to the FBG interrogator
          * 
          */
         bool connect();
+
+        /**
+         * Disconnect to the FBG interrogator
+         * 
+         */
+        bool disconnect();
 
         /**
          * Publish whether the interrogator is connected or not
@@ -28,17 +39,13 @@ class FBGDemoPublisher : public FBGInterrogatorNodeInterface
 
         
     protected:
-        int num_active_areas;
-
-        // Publisher timeers
-        rclcpp::TimerBase::SharedPtr pub_peak_timer;
-        rclcpp::TimerBase::SharedPtr pub_conn_timer;
+        rclcpp::TimerBase::SharedPtr peak_pub_timer;
+        rclcpp::TimerBase::SharedPtr conn_pub_timer;
 
         
     private:
-
-        // Callback groups for Multi-threaded execution
         rclcpp::CallbackGroup::SharedPtr pub_cb_grp;
         rclcpp::CallbackGroup::SharedPtr srv_cb_grp;
 
-}; // class FBGDemoPublisher
+        Interrogator interrogator;
+};

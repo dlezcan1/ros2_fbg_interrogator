@@ -25,11 +25,13 @@ find_package(std_msgs REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 # executables
-# add_executable(fbg_talker src/fbg_talker.cpp src/interrogator.cpp)
-# target_include_directories(fbg_talker PUBLIC
-#  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#  $<INSTALL_INTERFACE:include>)
-# ament_target_dependencies(fbg_talker rclcpp std_srvs std_msgs)
+add_executable(fbg_interrogator src/fbg_interrogator.cpp 
+                                src/interrogator.cpp 
+                                src/FBGInterrogatorNodeInterface.cpp )
+target_include_directories(fbg_interrogator PUBLIC
+ $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+ $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(fbg_interrogator rclcpp std_srvs std_msgs)
 
 add_executable(fbg_demo src/fbg_demo.cpp src/FBGInterrogatorNodeInterface.cpp)
 target_include_directories(fbg_demo PUBLIC
@@ -37,7 +39,7 @@ target_include_directories(fbg_demo PUBLIC
   $<INSTALL_INTERFACE:include>)
   ament_target_dependencies(fbg_demo rclcpp std_srvs std_msgs)
 
-install(TARGETS fbg_demo
+install(TARGETS fbg_demo fbg_interrogator
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

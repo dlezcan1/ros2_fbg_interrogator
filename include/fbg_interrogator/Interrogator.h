@@ -35,13 +35,13 @@
 
 typedef std::vector<double> Peaks;
 typedef std::array< Peaks, 4 > PeakContainer;
-using boost::asio::ip::tcp;
 
 class Interrogator { //: mtsTaskPeriodic {
   // attributes
 protected:
   /// TCP socket
   // osaSocket socket;
+  using boost::asio::ip::tcp;
   boost::asio::io_service io_service;
   tcp::socket socket{io_service};
 
@@ -69,7 +69,7 @@ protected:
     int val;
   };
 
-  PeakContainer peaks; // 4 for number of channels 
+  PeakContainer m_peaks; // 4 for number of channels 
   std::vector<double> unpackedPeaks; // peaks ravelled out
  
   // methods
@@ -138,7 +138,8 @@ public:
   */
   //void setReferenceValues(const unsigned int n);
 
-  PeakContainer getPeaks() {return peaks;};
+  PeakContainer getPeaks() {return m_peaks;};
+  void getPeaks(PeakContainer& peaks) {peaks = m_peaks;} // in-place definition
   std::vector<double> getUnpackedPeaks();
   /*!
     Read the response

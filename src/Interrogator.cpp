@@ -223,7 +223,7 @@ void Interrogator::extractPeaks()
   // 88 bytes to end of header
   char *peakBuf = msgBuffer + 88;
   
-  for (int k = 0; k < peaks.size(); k++) 
+  for (int k = 0; k < m_peaks.size(); k++) 
   {
     nPeaks[k] = getNumPeaks(dutBuf);
     // std::cout << "numPeaks[" << k << "] = " << nPeaks[k] << std::endl;
@@ -233,10 +233,11 @@ void Interrogator::extractPeaks()
   } // for
 
   // obtain FBG data for each channel
-  for (int i = 0; i < peaks.size(); i++)
+  for (int i = 0; i < m_peaks.size(); i++)
   {
+    m_peaks[i].clear(); // remove all peaks
     for (int j = 0; j < nPeaks[i]; j++) {
-      peaks[i].push_back( getPeak( peakBuf ) );
+      m_peaks[i].push_back( getPeak( peakBuf ) );
       peakBuf += 4;
     } // for
   } // for
@@ -284,7 +285,7 @@ void Interrogator::setGain(int channel, int gain)
 
 void Interrogator::setThreshold(int threshold)
 {
-  for(int channel=0 ; channel<peaks.size() ; channel++)
+  for(int channel=0 ; channel< m_peaks.size() ; channel++)
   {
     std::stringstream s;
     s << "#SET_CH_NOISE_THRESH " << std::noboolalpha << channel << " " << threshold << std::endl;
@@ -306,7 +307,7 @@ std::vector<double> Interrogator::getUnpackedPeaks()
   //                   2 <- 2
   //                   3 <- 3
   // channel 1 seems to have some issues so using channels 2,3,4
-  for (std::vector<double> peaks_ch : peaks)
+  for (std::vector<double> peaks_ch : m_peaks)
   {
     for (double peak : peaks_ch)
       unpackedPeaks.push_back(peak);

@@ -104,9 +104,22 @@ PeakContainer FBGInterrogatorNodeInterface::processPeaks(const PeakContainer& pe
 {
     PeakContainer proc_peaks;
 
+    processPeaks(peaks, ref_peaks, proc_peaks, temp_comp);
+
+    return proc_peaks;
+
+
+} // FBGInterrogatorNodeInterface::processPeaks
+
+void FBGInterrogatorNodeInterface::processPeaks(const PeakContainer& peaks, const PeakContainer& ref_peaks,
+                                                PeakContainer& proc_peaks, bool temp_comp)
+{
     // remove the reference peak wavelengths
     for (int i = 0; i < ref_peaks.size(); i++)
     {
+        if (!proc_peaks[i].empty())
+            proc_peaks[i].clear();
+
         proc_peaks[i].reserve(ref_peaks[i].size()); // allocate memory for the currect amount of wavelengths
         for (int j = 0; j < ref_peaks[i].size(); j++)
         {
@@ -152,8 +165,6 @@ PeakContainer FBGInterrogatorNodeInterface::processPeaks(const PeakContainer& pe
         } // for: active areas
 
     } // if: temperature compensation
-
-    return proc_peaks;
 
 } // FBGInterrogatorNodeInterface::processPeaks
 

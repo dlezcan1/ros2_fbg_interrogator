@@ -67,7 +67,8 @@ void FBGDemoPublisher::publishConnected()
 void FBGDemoPublisher::publishPeaks()
 {
     // Generate artificial wavelengths
-    raw_peaks = PeakContainer(); // reset the container
+    for (int i = 0; i < raw_peaks.size(); i++)
+        raw_peaks[i].clear();
 
     double base_wl = 1530.0;
     for (int aa = 0; aa < num_active_areas; aa++)

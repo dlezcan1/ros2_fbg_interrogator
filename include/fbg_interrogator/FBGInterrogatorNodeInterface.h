@@ -37,7 +37,7 @@ class FBGInterrogatorNodeInterface : public rclcpp::Node
          * 
          */
         static PeakContainer processPeaks(const PeakContainer& peaks, const PeakContainer& ref_peaks, bool temp_comp = false);
-
+        static void processPeaks(const PeakContainer& peaks, const PeakContainer& ref_peaks, PeakContainer& prc_peaks, bool temp_comp); // inplace
         /**
          * Publish whether the interrogator is connected or not
          * 

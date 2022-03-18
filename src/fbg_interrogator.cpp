@@ -16,7 +16,7 @@ public:
     {
         
         std::string ip_address = this->declare_parameter("interrogator.ip", "192.168.1.11"); // IP address of the interrogator
-        int port = this->declare
+        int port = this->declare_parameter("interrogator.port", 1852); // Port of the interrogator connection
         
     } // constructor
     

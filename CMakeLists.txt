@@ -19,8 +19,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(rcl_interface REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(rcl_interfaces REQUIRED)
 
 add_executable(fbg_interrogator src/fbg_interrogator.cpp src/Interrogator.cpp)
 target_include_directories(fbg_interrogator PUBLIC
@@ -30,8 +30,8 @@ ament_target_dependencies(
   fbg_interrogator
   "rclcpp"
   "std_msgs"
-  "rcl_interface"
   "std_srvs"
+  "rcl_interfaces"
 )
 
 install(TARGETS fbg_interrogator

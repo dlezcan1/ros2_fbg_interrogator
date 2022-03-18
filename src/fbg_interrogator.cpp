@@ -3,7 +3,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/node.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "std_msgs/msg/float64multiarray.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
 
 #include "Interrogator.h"
 

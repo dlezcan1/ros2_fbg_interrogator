@@ -21,6 +21,8 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
+find_package(Eigen3)
 
 add_executable(fbg_interrogator src/fbg_interrogator.cpp src/Interrogator.cpp)
 target_include_directories(fbg_interrogator PUBLIC
@@ -32,6 +34,7 @@ ament_target_dependencies(
   "std_msgs"
   "std_srvs"
   "rcl_interfaces"
+  "Eigen3"
 )
 
 install(TARGETS fbg_interrogator

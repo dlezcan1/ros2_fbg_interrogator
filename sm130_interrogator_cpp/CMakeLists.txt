@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(fbg_interrogator)
+project(fbg_interrogator_cpp)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -24,12 +24,12 @@ find_package(rcl_interfaces REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3)
 
-add_executable(fbg_interrogator src/fbg_interrogator.cpp src/Interrogator.cpp)
-target_include_directories(fbg_interrogator PUBLIC
+add_executable(sm130_interrogator src/fbg_interrogator.cpp src/Interrogator.cpp)
+target_include_directories(sm130_interrogator PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(
-  fbg_interrogator
+  sm130_interrogator
   "rclcpp"
   "std_msgs"
   "std_srvs"
@@ -37,7 +37,7 @@ ament_target_dependencies(
   "Eigen3"
 )
 
-install(TARGETS fbg_interrogator
+install(TARGETS sm130_interrogator
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

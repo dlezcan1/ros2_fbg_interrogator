@@ -1,7 +1,7 @@
 import socket
+
 from typing import List, Union
 from dataclasses import dataclass, field
-
 import numpy as np
 
 
@@ -29,7 +29,7 @@ class StatusHeader:
     headerSize: int = None
     headerVersion: int = None
 
-
+    
 # dataclass: StatusHeader
 
 @dataclass
@@ -102,7 +102,10 @@ class SpectrumMessage:
 class Interrogator():
     def __init__( self, address, port, timeout: float = 5 ):
         self.sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-        self.socketTimeout = timeout # set the socket's timeout
+        self.socketTimeout = timeout  # set the socket's timeout
+
+        self.is_ready = False
+
         self.connect( address, port )
 
     # __init__
@@ -120,15 +123,27 @@ class Interrogator():
     # property setter: socketTimeout
 
     def connect( self, address, port ):
-        self.sock.connect( (address, port) )
+        try:
+            self.sock.connect( (address, port) )
+            self.is_ready = True
+
+        # try
+        except socket.timeout:
+            self.is_ready = False
+
+        # except
 
     # connect
 
     def getData( self ):
         """ Get Peak data from all channels
 
-            :return PeakMessage object for the 4 channels
+            :return PeakMessage object for the 4 channels, None if not conneted (is_ready)
         """
+        # check if interrogator is connected
+        if not self.is_ready:
+            return None
+
         data = self.sendCommand( "#GET_UNBUFFERED_DATA" )
 
         peak_msg = PeakMessage()
@@ -168,8 +183,12 @@ class Interrogator():
         Get the spectrum of the interrogator for selected Channels
             :param channels: (Default = [1,2,3,4]) integer or list of integers of channel(s) to get spectrum for
 
-            :return: SpectrumMessage filled in with the specified channels
+            :return: SpectrumMessage filled in with the specified channels, None is interrogator is not connected (is_ready)
         """
+        # check if interrogator is connected
+        if not self.is_ready:
+            return None
+
         # argument parsing
         if channels is None:
             channels = [ 1, 2, 3, 4 ]  # all channels default
@@ -245,7 +264,14 @@ class Interrogator():
 
             :returns: byte string of response
 
+            :raise ConnectionError if interrogator is not connected (is_ready).
+
         """
+        # check if interrogator is connected
+        if not self.is_ready:
+            raise ConnectionError( "Interrogator is not connected!" )
+
+        # if
 
         if not command.endswith( "\n" ):
             command += '\n'

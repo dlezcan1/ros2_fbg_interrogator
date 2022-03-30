@@ -1,4 +1,5 @@
 from setuptools import setup
+import glob
 
 package_name = 'sm130_interrogator_py'
 
@@ -10,6 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name, glob.glob('launch/*.launch.*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,7 +22,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'sm130_interrogator = sm130_interrogator_py.sm130_interrogator:main'
+            'sm130_interrogator = sm130_interrogator_py.sm130_interrogator:main',
+            'sm130_demo = sm130_interrogator_py.sm130_interrogator_demo:main',
         ],
     },
 )

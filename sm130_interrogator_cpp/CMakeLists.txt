@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(fbg_interrogator_cpp)
+project(sm130_interrogator_cpp)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)

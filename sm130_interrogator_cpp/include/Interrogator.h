@@ -84,7 +84,6 @@ namespace Interrogator
             INT_LOG_DEBUG("  wavelengthStart: %f\n", wavelengthStart);
             INT_LOG_DEBUG("  wavelengthEnd:   %f\n", wavelengthEnd);
 
-
         }// StatusHeader::print
     };// struct: StatusHeader
 

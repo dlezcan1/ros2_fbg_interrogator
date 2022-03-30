@@ -7,6 +7,7 @@
 /* Helper functions for bit-wise operations */
 #define BIT(x) ( 1 << (x) ) // bit-shift operation
 
+#if 0
 uint32_t bitMask(std::vector<u_int> bits)
 {
     uint32_t mask = 0;
@@ -53,6 +54,8 @@ T flipBits(const T inp)
 
 } // flipBits
 
+# endif
+
 /* Interrogator implementations */
 namespace Interrogator
 {
@@ -75,7 +78,7 @@ namespace Interrogator
 
         int to_status = setsockopt(m_clientsock, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
         setsockopt(m_clientsock, SOL_SOCKET, SO_SNDTIMEO, (char*) &timeout, sizeof(timeout));
-        INT_LOG_DEBUG("Timeout status: %d\n", to_status);
+        INT_LOG_DEBUG("Interrogator Timeout status: %d\n", to_status);
 
         // connect to the interrogator's server
         int connection_status = connect(m_clientsock, (struct sockaddr*)&m_server_addr, sizeof(m_server_addr));
@@ -96,9 +99,8 @@ namespace Interrogator
     PeakMessage Interrogator::getData()
     {
         // Get data command
-        buffer_t response = sendCommand("#GET_DATA");
+        buffer_t response = sendCommand("#GET_UNBUFFERED_DATA");
         
-
         // Parse the header
         StatusHeader header = parseHeader((uint32_t*) response, m_bytesReceived);
         header.print();
@@ -149,36 +151,35 @@ namespace Interrogator
         StatusHeader header;
 
         // handle DWORD0
-        header.fullSpectrumRadix = buffer[0] & bitMaskRange(0,7);
-        header.fpgaVersion = ((buffer[0] & bitMaskRange(16, 23)) >> 15);
-        header.fanSecondary = (buffer[0] & bitMask({28})) >> 27;
-        header.fanPrimary = (buffer[0] & bitMask({29})) >> 28;
-        header.calibrationFault = (buffer[0] & bitMask({30})) >> 29;
+        header.fullSpectrumRadix = buffer[0] & 0x000F;
+        header.fpgaVersion = (buffer[0] & 0x0F00) >> 15;
+        header.fanSecondary = (buffer[0] & BIT(28)) >> 27;
+        header.fanPrimary = (buffer[0] & BIT(29)) >> 28;
+        header.calibrationFault = (buffer[0] & BIT(30)) >> 29;
 
         // handle DWORD1
-        header.switchPosition = (buffer[1] & bitMask({16, 17})) >> 15;
-        header.muxLevel = (buffer[1] & bitMask({17, 18})) >> 16;
-        header.triggerMode = (buffer[1] & bitMask({20, 21})) >> 19;
-        header.operatingMode = (buffer[1] & bitMask({22, 23})) >> 21;
+        header.switchPosition = (buffer[1] & BIT(16)) >> 16;
+        header.muxLevel = (buffer[1] & BIT(17)) >> 16;
+        header.triggerMode = (buffer[1] & BIT(20)) >> 19;
+        header.operatingMode = (buffer[1] & BIT(22)) >> 21;
 
         // handle DWORDS 4-5: number of sensors detected)
-        header.CH1SensorsDetected = (buffer[4] & bitMaskRange(0,15));
-        header.CH2SensorsDetected = (buffer[4] & bitMaskRange(16,31)) >> 15;
-        header.CH3SensorsDetected = (buffer[5] & bitMaskRange(0,15));
-        header.CH4SensorsDetected = (buffer[5] & bitMaskRange(16,31)) >> 15;
+        header.CH1SensorsDetected = (buffer[4] & 0x00FF);
+        header.CH2SensorsDetected = (buffer[4] & 0xFF00) >> 15;
+        header.CH3SensorsDetected = (buffer[5] & 0x00FF);
+        header.CH4SensorsDetected = (buffer[5] & 0xFF00) >> 15;
 
         // handle DWORDS 7-9: serial number and timeStamp
         header.serialNumber = buffer[7];
-        // header.serialNumber = flipBits(header.serialNumber);
-        header.timeStamp = (float) buffer[8] + ((float) buffer[9])/(1.0e6);
+        header.timeStamp = (float) buffer[8] + ((float) buffer[9])/1.0e6;
 
         // handle DWORD 11: error code
-        header.errorCode = (buffer[11] & bitMaskRange(24, 31)) >> 23;
+        header.errorCode = (buffer[11] & 0xF000) >> 23;
 
         // handle DWORD 12
-        header.bufferSize = (buffer[12] & bitMaskRange(0,7));
-        header.headerVersion = (buffer[12] & bitMaskRange(8,15)) >> 7;
-        header.headerSize = (buffer[12] & bitMaskRange(16,31)) >> 15;
+        header.bufferSize = (buffer[12] & 0x000F);
+        header.headerVersion = (buffer[12] & 0x00F0) >> 7;
+        header.headerSize = (buffer[12] & 0xFF00) >> 15;
 
         // handle DWORDS 18-21
         header.granularity = (buffer[18]);

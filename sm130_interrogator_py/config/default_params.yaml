@@ -1,0 +1,34 @@
+FBGInterrogatorNode:
+  ros__parameters:
+    interrogator:
+      ip_address: "192.168.1.11"
+    sensor:
+      num_samples: 200
+
+FBGInterrogatorDemoNode:
+  ros__parameters:
+    interrogator:
+      ip_address: "192.168.1.11"
+    sensor:
+      num_samples: 200
+    demo:
+      num_channels: 3
+      num_active_areas: 3
+
+needle:
+  FBGInterrogatorNode:
+    ros__parameters:
+      interrogator:
+        ip_address: "192.168.1.11"
+      sensor:
+        num_samples: 200
+
+  FBGInterrogatorDemoNode:
+    ros__parameters:
+      interrogator:
+        ip_address: "192.168.1.11"
+      sensor:
+        num_samples: 200
+      demo:
+        num_channels: 3
+        num_active_areas: 4

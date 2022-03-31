@@ -11,7 +11,7 @@ def generate_launch_description():
     # arguments
     ros_paramfile_arg = DeclareLaunchArgument( 'paramFile',
                                                default_value='',
-                                               description='Parameter file to use. This overrides all arguments.' )
+                                               description='Parameter file to use in local share directory. This overrides all arguments.' )
     interrogator_ip_arg = DeclareLaunchArgument( 'ip',
                                                  default_value='192.168.1.11'
                                                  )

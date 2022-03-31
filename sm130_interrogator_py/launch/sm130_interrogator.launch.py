@@ -28,7 +28,7 @@ def generate_launch_description():
             emulate_tty=True,
             parameters=[ {
                     "interrogator.ip_address": LaunchConfiguration( 'ip' ),
-                    "sensor.num_samples"     : LaunchDescription( 'numSamples' ),
+                    "sensor.num_samples"     : LaunchConfiguration( 'numSamples' ),
                     },
                     PathJoinSubstitution( [ FindPackageShare( 'sm130_interrogator_py' ),
                                             'config',

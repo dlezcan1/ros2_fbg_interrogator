@@ -98,7 +98,6 @@ class FBGInterrogatorNode( Node ):
             return None
 
         peak_msg = self.interrogator.getData()
-        peak_msg = interrogator.PeakMessage()
 
         peak_dict = {
                 1: np.array( peak_msg.peak_container.peaks.CH1, dtype=np.float64 ),

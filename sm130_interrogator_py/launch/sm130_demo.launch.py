@@ -1,13 +1,17 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     ld = LaunchDescription()
 
     # arguments
+    ros_paramfile_arg = DeclareLaunchArgument( 'paramFile',
+                                               default_value='',
+                                               description='Parameter file to use in local share directory. This overrides all arguments.' )
     interrogator_ip_arg = DeclareLaunchArgument( 'ip',
                                                  default_value='192.168.1.11'
                                                  )
@@ -29,10 +33,15 @@ def generate_launch_description():
                     "sensor.num_samples"     : LaunchConfiguration( 'numSamples' ),
                     "demo.num_channels"      : LaunchConfiguration( "numCH" ),
                     "demo.num_active_areas"  : LaunchConfiguration( "numAA" ),
-                    } ]
+                    },
+                    PathJoinSubstitution( [ FindPackageShare( 'sm130_interrogator_py' ),
+                                            'config',
+                                            LaunchConfiguration( 'paramFile' ) ] )
+                    ]
             )
 
     # add to launch description
+    ld.add_action( ros_paramfile_arg )
     ld.add_action( interrogator_ip_arg )
     ld.add_action( num_samples_arg )
     ld.add_action( demo_num_chs_arg )

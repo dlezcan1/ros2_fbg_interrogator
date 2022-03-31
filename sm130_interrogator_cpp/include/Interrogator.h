@@ -84,6 +84,7 @@ namespace Interrogator
             INT_LOG_DEBUG("  wavelengthStart: %f\n", wavelengthStart);
             INT_LOG_DEBUG("  wavelengthEnd:   %f\n", wavelengthEnd);
 
+
         }// StatusHeader::print
     };// struct: StatusHeader
 
@@ -91,14 +92,15 @@ namespace Interrogator
     {
         StatusHeader header;
         PeakContainer peaks;
-    }; // strcut: PeakMessage
+    
+    }; // struct: PeakMessage
 
     /* Interrogator Implementations */
     class AbstractInterrogator
     {
     public:
         // constructor and desctructor
-        AbstractInterrogator(std::string& ip_addr, int port) {};
+        AbstractInterrogator(const std::string& ip_addr, int port) {};
         virtual ~AbstractInterrogator(){};
 
         /* commands */
@@ -121,7 +123,7 @@ namespace Interrogator
     class Interrogator : AbstractInterrogator
     {
 	public:
-        Interrogator(std::string& ip_addr, int port); // connect to the interrogator
+        Interrogator(const std::string& ip_addr, int port); // connect to the interrogator
         virtual ~Interrogator(); // close the connection
 
         /* commands */
@@ -141,6 +143,7 @@ namespace Interrogator
 
 
             INT_LOG_DEBUG("\n");
+
         } // printBuffer
 
 	

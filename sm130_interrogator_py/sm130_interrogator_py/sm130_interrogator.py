@@ -100,10 +100,10 @@ class FBGInterrogatorNode( Node ):
         peak_msg = self.interrogator.getData()
 
         peak_dict = {
-                1: np.array( peak_msg.peak_container.peaks.CH1, dtype=np.float64 ),
-                2: np.array( peak_msg.peak_container.peaks.CH2, dtype=np.float64 ),
-                3: np.array( peak_msg.peak_container.peaks.CH3, dtype=np.float64 ),
-                4: np.array( peak_msg.peak_container.peaks.CH4, dtype=np.float64 )
+                1: np.array( peak_msg.peak_container.CH1, dtype=np.float64 ),
+                2: np.array( peak_msg.peak_container.CH2, dtype=np.float64 ),
+                3: np.array( peak_msg.peak_container.CH3, dtype=np.float64 ),
+                4: np.array( peak_msg.peak_container.CH4, dtype=np.float64 )
                 }
 
         return peak_dict

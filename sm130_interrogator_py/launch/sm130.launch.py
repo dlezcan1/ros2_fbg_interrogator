@@ -13,13 +13,13 @@ def generate_launch_description():
 
     # arguments
     interrogator_sim_level_arg = DeclareLaunchArgument('sim_level_interrogator',
-                                                       default_value="1", 
+                                                       default_value="1",
                                                        description=("Simulation level: 1 - FBG demo",
                                                                     "2 - real FBG sensors")
                                                         )
     ros_paramfile_arg = DeclareLaunchArgument( 'paramFile',
                                                default_value='',
-                                               description='Parameter file to use in local share directory. This overrides all arguments.' 
+                                               description='Parameter file to use in local share directory. This overrides all arguments.'
                                                )
     interrogator_ip_arg = DeclareLaunchArgument( 'ip',
                                                  default_value='192.168.1.11'
@@ -33,13 +33,12 @@ def generate_launch_description():
 
     # launch descriptions
     ld_demo_interrogator = IncludeLaunchDescription( # demo FBG interrogator
-            PythonLaunchDescriptionSource( 
+            PythonLaunchDescriptionSource(
                 PathJoinSubstitution([pkg_fbg_interrogator, 'sm130_demo.launch.py'])
             ),
-            condition=conditions.IfCondition(
-                PythonExpression([LaunchConfiguration('sim_level_interrogator'), " == 1"])),
+            condition=conditions.LaunchConfigurationEquals( 'sim_level_interrogator', "1" ),
             launch_arguments = {
-                                    'ip'       : LaunchConfiguration('interrogatorIP'), 
+                                    'ip'       : LaunchConfiguration('interrogatorIP'),
                                     'numCH'    : LaunchConfiguration('numCH'),
                                     'numAA'    : LaunchConfiguration('numAA'),
                                     'paramFile': LaunchConfiguration('paramFile'),
@@ -48,20 +47,19 @@ def generate_launch_description():
 
     # FBG Interrogator 
     ld_fbg_interrogator = IncludeLaunchDescription( # real FBG interrogator
-            PythonLaunchDescriptionSource( 
+            PythonLaunchDescriptionSource(
                 PathJoinSubstitution([pkg_fbg_interrogator, 'sm130_interrogator.launch.py'])
             ),
-            condition=conditions.IfCondition(
-                PythonExpression([LaunchConfiguration('sim_level_interrogator'), " == 2"])),
+            condition=conditions.LaunchConfigurationEquals( 'sim_level_interrogator', "2" ),
             launch_arguments = {
-                                    'ip'       : LaunchConfiguration('interrogatorIP'), 
+                                    'ip'       : LaunchConfiguration('interrogatorIP'),
                                     'paramFile': LaunchConfiguration('paramFile'),
                                 }.items()
     )
 
     # configure launch description
     ld.add_action(interrogator_sim_level_arg)
-    
+
     ld.add_action(ros_paramfile_arg)
     ld.add_action(interrogator_ip_arg)
     ld.add_action(num_samples_arg)

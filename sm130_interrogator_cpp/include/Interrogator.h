@@ -13,7 +13,6 @@
 
 #define INTERROGATOR_BUFFER_SIZE 65624
 
-#define INTERROGATOR_DEBUG
 #ifdef INTERROGATOR_DEBUG
     #define INT_LOG_DEBUG(...) printf(__VA_ARGS__)
 #else

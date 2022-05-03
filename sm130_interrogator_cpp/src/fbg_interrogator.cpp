@@ -1,8 +1,10 @@
 #include <cstdio>
+#include <iostream>
 
 // rclcpp
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/node.hpp"
+#include "rclcpp/executor.hpp"
 
 // messages
 #include "std_msgs/msg/bool.hpp"
@@ -35,6 +37,7 @@ public:
         std::string ip_address = this->declare_parameter("interrogator.ip", "192.168.1.11"); // IP address of the interrogator
         int port = this->declare_parameter("interrogator.port", 1852); // Port of the interrogator connection
         m_numSamples = this->declare_parameter("sensor.num_samples", 200); // number of samples to collect
+        m_sensorsCalibrated = false;
         
         // connect to interrogator
         RCLCPP_INFO(this->get_logger(), "Connecting to interrogator at: %s:%d", ip_address.c_str(), port);
@@ -42,15 +45,15 @@ public:
         RCLCPP_INFO(this->get_logger(), "Connected to interrogator at: %s:%d", ip_address.c_str(), port);
         
         // create publishers
-        m_pub_signalsRaw = this->create_publisher<std_msgs::msg::Float64MultiArray>("sensor/raw",       10);
-        m_pub_signalsRaw = this->create_publisher<std_msgs::msg::Float64MultiArray>("sensor/processed", 10);
+        m_pub_signalsRaw  = this->create_publisher<std_msgs::msg::Float64MultiArray>("sensor/raw",       10);
+        m_pub_signalsProc = this->create_publisher<std_msgs::msg::Float64MultiArray>("sensor/processed", 10);
         
         // create services
         m_srv_reconnect = this->create_service<std_srvs::srv::Trigger>("interrogator/reconnect", INTERROGATOR_BIND_SERVICE(service_reconnectInterrogator));
-        m_srv_calibrate = this->create_service<std_srvs::srv::Trigger>("interrogator/reconnect", INTERROGATOR_BIND_SERVICE(service_calibrateSensors));
+        m_srv_calibrate = this->create_service<std_srvs::srv::Trigger>("sensor/calibrate",       INTERROGATOR_BIND_SERVICE(service_calibrateSensors));
         
         // create timers
-        m_peakTimer = this->create_wall_timer(1000ms, INTERROGATOR_BIND_PUBLISHER(publish_peaks));
+        m_peakTimer = this->create_wall_timer(10ms, INTERROGATOR_BIND_PUBLISHER(publish_peaks));
         
     } // constructor
     
@@ -201,21 +204,86 @@ public:
         return peaks;
         
     } // peaksToEigen
+
+    static Interrogator::PeakMessage eigenToPeaks(const Eigen::VectorXd& eig_peaks, const std::array<size_t, INTERROGATOR_MAX_CHANNELS> num_aas)
+    {
+        PeakMessage peak_msg;
+
+        size_t offset = 0;
+        for (int ch_i = 0; ch_i < INTERROGATOR_MAX_CHANNELS; ch_i++)
+        {
+            size_t aas = num_aas[ch_i]; // get number of AAs
+
+            for (int aa_j = 0; aa_j < aas; aa_j++)
+                if (eig_peaks.size() > aa_j + offset) // ensure no index error
+                    peak_msg.peaks[ch_i].push_back( eig_peaks[ aa_j + offset ]);
+
+            offset += aas; // increment the offset
+
+            // update number of channels detected
+            switch (ch_i)
+            {
+                case 0:
+                    peak_msg.header.CH1SensorsDetected = aas;
+                    break;
+
+                case 1:
+                    peak_msg.header.CH2SensorsDetected = aas;
+                    break;
+
+                case 2:
+                    peak_msg.header.CH3SensorsDetected = aas;
+                    break;
+
+                case 3:
+                    peak_msg.header.CH4SensorsDetected = aas;
+                    break;
+
+            } // switch
+
+        } // for
+
+        return peak_msg;
+        
+    } // eigenToPeaks
+
     
 // public functions
 private: // functions
     void publish_peaks()
     {
-        RCLCPP_INFO(this->get_logger(), "Publishing peaks!");
+        RCLCPP_DEBUG(this->get_logger(), "Publishing peaks!");
         
         //  get peaks
         Interrogator::PeakMessage peaks = m_interrogator->getData();
         
         // convert peaks to a Peak Message
         auto msg = peaksToMsg(peaks);
-        
+
         // publish peaks
         m_pub_signalsRaw->publish(msg);
+
+        // publish processed peaks
+        if (m_sensorsCalibrated)
+        {
+            Eigen::VectorXd eig_peaks = peaksToEigen(peaks);
+
+            std::array<size_t, 4> num_aas = {
+                                                peaks.header.CH1SensorsDetected,
+                                                peaks.header.CH2SensorsDetected,
+                                                peaks.header.CH3SensorsDetected,
+                                                peaks.header.CH4SensorsDetected
+            };
+
+            if (eig_peaks.size() == m_referencePeaks.size())
+            {
+                auto msg_proc = peaksToMsg( eigenToPeaks( eig_peaks - m_referencePeaks, num_aas ) );
+                m_pub_signalsProc->publish( msg_proc );
+            }
+            else
+                RCLCPP_WARN( this->get_logger(), "Peaks are not of same size as reference. Size is %d, should be %d", eig_peaks.size(), m_referencePeaks.size() );
+
+        } // if
         
     } // publish_peaks
     
@@ -227,19 +295,53 @@ private: // functions
         
         // set-up peaks
         int counter = 0;
-        auto signal_cb = [this, &counter](std_msgs::msg::Float64MultiArray::SharedPtr msg){
+        
+        /** DOES NOT WORK
+        // subscriber node for peak collection 
+        auto tmp_node = std::make_shared<rclcpp::Node>("TempSignalSubscriber");        
+        auto signal_cb = [this, &counter, &tmp_node](std_msgs::msg::Float64MultiArray::SharedPtr msg){
             // TODO: implement subscriber callback function
+            if (counter == 0)
+                this->m_referencePeaks = peaksToEigen( msgToPeaks( msg ) );
+            else
+                this->m_referencePeaks += peaksToEigen( msgToPeaks( msg ) );
+
             counter++;
-            RCLCPP_INFO(this->get_logger(), "Calibration Counter: %d", counter);
+            RCLCPP_INFO(tmp_node->get_logger(), "Calibration Counter: %d", counter);
+
         }; // lambda: signal_cb
-        
-        // subscriber node for peak collection
-        auto tmp_node = std::make_shared<rclcpp::Node>("TempSignalSubscriber");
-        auto tmp_sub = tmp_node->create_subscription<std_msgs::msg::Float64MultiArray>("signals/raw", 10, signal_cb);
-        
+        auto tmp_sub  = tmp_node->create_subscription<std_msgs::msg::Float64MultiArray>("signals/raw", 10, signal_cb);
+        */
+
+        // TODO: need to implement calibration.
+        while (counter < m_numSamples)
+        {
+            // rclcpp::spin_some(tmp_node);
+            auto peak_msg = m_interrogator->getData();
+            if (counter == 0)
+                m_referencePeaks = peaksToEigen( peak_msg );
+
+            else
+                m_referencePeaks += peaksToEigen( peak_msg );
+
+            counter++;
+            RCLCPP_DEBUG(this->get_logger(), "Calibration Counter %d", counter);
+
+        } // while
+
+        // perform averaging
+        m_referencePeaks /= counter;
+                
         // set response parameter
         res->success = true;
-        RCLCPP_INFO(this->get_logger(), "Calibration successful.");
+        res->message = "Calibration successful.";
+        RCLCPP_INFO(this->get_logger(), res->message.c_str() );
+        std::stringstream out_msg;
+        out_msg << "Reference wavelengths (nm): " << ((Eigen::RowVectorXd) m_referencePeaks);
+        RCLCPP_INFO( this->get_logger(), out_msg.str().c_str() );
+
+        // update calibrated sensors indicator
+        m_sensorsCalibrated = m_sensorsCalibrated || res->success;
         
         
     } // service_calibrateSensors
@@ -253,7 +355,6 @@ private: // functions
         
         this->get_parameter("interrogator.ip", ip_addr);
         this->get_parameter("interrogator.port", port);
-        
         
         // reconnect to interrogator
         RCLCPP_INFO(this->get_logger(), "Reconnecting interrogator to: %s:%d", ip_addr.c_str(), port);
@@ -271,6 +372,7 @@ private: // members
     std::shared_ptr<Interrogator::Interrogator> m_interrogator;
     Eigen::VectorXd m_referencePeaks;
     size_t m_numSamples;
+    bool m_sensorsCalibrated = false;
     
     // publishers
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr m_pub_signalsRaw,

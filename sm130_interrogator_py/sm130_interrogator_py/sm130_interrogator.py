@@ -1,5 +1,7 @@
 # standard libraries
+from collections import defaultdict
 from typing import Optional, Dict
+import os.path
 
 # ROS standard libraries
 import rclpy
@@ -14,6 +16,8 @@ from std_msgs.msg import Bool, Float64MultiArray, MultiArrayDimension
 # ros2 services
 from std_srvs.srv import Trigger
 
+from needle_shape_sensing.shape_sensing import ShapeSensingFBGNeedle
+
 # custom imports
 from . import interrogator
 
@@ -24,16 +28,36 @@ class FBGInterrogatorNode( Node ):
             'ip'         : 'interrogator.ip_address',
             'ref_wl'     : 'sensor.CH{:d}.reference',
             'num_samples': 'sensor.num_samples',
+            'fbg_needle' : 'fbg_needle.path', 
+
             }
     SM130_PORT = 1852
+
+    CH_REMAPS = {
+        1: 1,
+        2: 3, 
+        3: 4,
+        4: 2,
+    } # to deal with broken CH 2: Needle CH -> Interrogator CH
 
     def __init__( self, name='FBGInterrogatorNode' ):
         super().__init__( name )
         # parameters: interrogator
-        self.ip_address = self.declare_parameter( self.param_names[ 'ip' ],
-                                                  '192.168.1.11' ).get_parameter_value().string_value
-        self.num_samples = self.declare_parameter( self.param_names[ 'num_samples' ],
-                                                   200 ).get_parameter_value().integer_value
+        self.ip_address     = self.declare_parameter( 
+            self.param_names[ 'ip' ],
+            '192.168.1.11' 
+        ).get_parameter_value().string_value
+        
+        self.num_samples    = self.declare_parameter( 
+            self.param_names[ 'num_samples' ],
+            200
+        ).get_parameter_value().integer_value
+        
+        self.fbgneedle_path = self.declare_parameter( 
+            self.param_names['fbg_needle'], 
+            ''
+        ).get_parameter_value().string_value
+
 
         # fields
         self.num_chs = 4
@@ -41,6 +65,10 @@ class FBGInterrogatorNode( Node ):
         self.is_connected = self.connect()
         self.ref_wavelengths = { }
 
+        # load the fbg needle
+        self.fbgneedle = None
+        self.load_fbgneedle()
+                
         # services
         self.reconnect_srv = self.create_service( Trigger, 'interrogator/reconnect', self.reconnect_service )
         self.calibrate_srv = self.create_service( Trigger, 'sensor/calibrate', self.ref_wl_service_old )
@@ -104,11 +132,53 @@ class FBGInterrogatorNode( Node ):
                 2: np.array( peak_msg.peak_container.CH2, dtype=np.float64 ),
                 3: np.array( peak_msg.peak_container.CH3, dtype=np.float64 ),
                 4: np.array( peak_msg.peak_container.CH4, dtype=np.float64 )
-                }
+        }
 
         return peak_dict
 
     # get_peaks
+
+    def load_fbgneedle(self):
+        """ Loads the FBG needle into the class """
+        try:
+            if os.path.isfile(
+                self.fbgneedle_path
+
+            ):
+                self.fbgneedle = ShapeSensingFBGNeedle.load_json(self.fbgneedle_path)
+
+        # try
+        except Exception as e:
+            self.get_logger().warn(str(e))
+
+        # except
+
+        if self.fbgneedle is None:
+            return
+
+        # if
+
+        if np.any(self.fbgneedle.ref_wavelengths < 0):
+            return
+        
+        # if
+
+        self.ref_wavelengths = defaultdict(list)
+        ch_assignments = self.fbgneedle.assignments_ch()
+
+        for i, ch_assmt in enumerate(ch_assignments):
+            self.ref_wavelengths[self.CH_REMAPS[ch_assmt]].append(
+                self.fbgneedle.ref_wavelengths[i]
+            )
+
+        # for
+
+        self.ref_wavelengths = dict(self.ref_wavelengths)
+        self.get_logger().info(f"Loaded FBG Needle: {str(self.fbgneedle)}")
+        for ch, peaks in self.ref_wavelengths.items():
+            self.get_logger().info( f"Reference wavelengths for CH{ch}: {peaks}" )
+
+    # load_fbgneedle
 
     def parse_peaks( self, peak_data: dict ) -> Optional[ Dict[ int, np.ndarray ] ]:
         """ Parse the peak data into a dict"""
@@ -179,8 +249,17 @@ class FBGInterrogatorNode( Node ):
             except KeyError as e:
                 continue
 
-            # except
+            # except KeyError
 
+            except ValueError as e:
+                self.get_logger().warn( 
+                    f"CH {ch_num} has {peaks.size} peaks, "
+                    f"but {self.ref_wavelengths[ch_num].size} ref peaks! "
+                    "Processed peaks cannot be published."
+                )
+
+            # except ValueError
+ 
         # for
 
         return proc_signals
@@ -219,7 +298,7 @@ class FBGInterrogatorNode( Node ):
         proc_peaks = dict( (ch, all_peaks[ ch ][ 'processed' ]) for ch in proc_ch_nums )
 
         # prepare messages
-        raw_tot_msg, raw_ch_msgs = self.parsed_peaks_to_msg( raw_peaks )
+        raw_tot_msg, raw_ch_msgs   = self.parsed_peaks_to_msg( raw_peaks )
         proc_tot_msg, proc_ch_msgs = self.parsed_peaks_to_msg( proc_peaks )
 
         for ch_num in all_peaks.keys():
@@ -387,6 +466,22 @@ class FBGInterrogatorNode( Node ):
             for ch_num, agg_peaks in data.items():
                 self.ref_wavelengths[ ch_num ] = agg_peaks / self.num_samples
             # for
+
+            if self.fbgneedle is not None:
+                self.fbgneedle.ref_wavelengths = np.hstack(
+                    peaks for wl, peaks in sorted(self.ref_wavelengths.items(), key=lambda x: x[0])
+                )
+                
+                fbgneedle_outpath = (
+                    self.fbgneedle_path 
+                    if self.fbgneedle_path.endswith("-ref-wavelength-latest.json") else
+                    self.fbgneedle_path.replace(".json", "-ref-wavelength-latest.json")
+                )
+
+                self.fbgneedle.save_json( fbgneedle_outpath )
+                self.get_logger().info( f"Saved FBG needle param file w/ updated reference wavelengths to: {fbgneedle_outpath}" )
+
+            # if
 
             response.success = True
             self.get_logger().info( "Recalibration successful" )

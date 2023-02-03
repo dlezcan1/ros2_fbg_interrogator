@@ -44,7 +44,7 @@ def generate_launch_description():
             ),
             condition=conditions.LaunchConfigurationEquals( 'sim_level_interrogator', "1" ),
             launch_arguments = {
-                                    'ip'       : LaunchConfiguration('interrogatorIP'),
+                                    'ip'       : LaunchConfiguration('ip'),
                                     'numCH'    : LaunchConfiguration('numCH'),
                                     'numAA'    : LaunchConfiguration('numAA'),
                                     'paramFile': LaunchConfiguration('paramFile'),
@@ -58,7 +58,7 @@ def generate_launch_description():
             ),
             condition=conditions.LaunchConfigurationEquals( 'sim_level_interrogator', "2" ),
             launch_arguments = {
-                                    'ip'             : LaunchConfiguration('interrogatorIP'),
+                                    'ip'             : LaunchConfiguration('ip'),
                                     'paramFile'      : LaunchConfiguration('paramFile'),
                                     'needleParamFile': LaunchConfiguration('needleParamFile')
                                 }.items()

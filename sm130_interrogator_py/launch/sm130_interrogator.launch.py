@@ -19,6 +19,12 @@ def generate_launch_description():
                                              default_value='200'
                                              )
 
+    needle_paramfile_arg = DeclareLaunchArgument( 
+        'needleParamFile',
+        default_value='',
+        description="needle parameter JSON file for loading the persistent reference wavelengths",
+    )
+
     # Nodes
     sm130_node = Node(
             package='sm130_interrogator_py',
@@ -29,6 +35,7 @@ def generate_launch_description():
             parameters=[ {
                     "interrogator.ip_address": LaunchConfiguration( 'ip' ),
                     "sensor.num_samples"     : LaunchConfiguration( 'numSamples' ),
+                    "fbg_needle.path"        : LaunchConfiguration( 'needleParamFile'),
                     },
                     PathJoinSubstitution( [ FindPackageShare( 'sm130_interrogator_py' ),
                                             'config',
@@ -40,6 +47,8 @@ def generate_launch_description():
     ld.add_action( ros_paramfile_arg )
     ld.add_action( interrogator_ip_arg )
     ld.add_action( num_samples_arg )
+    ld.add_action( needle_paramfile_arg )
+
     ld.add_action( sm130_node )
 
     return ld

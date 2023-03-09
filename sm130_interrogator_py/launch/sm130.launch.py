@@ -25,6 +25,12 @@ def generate_launch_description():
                                                  default_value='192.168.1.11'
                                                  )
 
+    needle_paramfile_arg = DeclareLaunchArgument( 
+        'needleParamFile',
+        default_value='',
+        description="needle parameter JSON file for loading the persistent reference wavelengths",
+    )
+
     num_samples_arg = DeclareLaunchArgument( 'numSamples',
                                              default_value='200'
                                              )
@@ -38,7 +44,7 @@ def generate_launch_description():
             ),
             condition=conditions.LaunchConfigurationEquals( 'sim_level_interrogator', "1" ),
             launch_arguments = {
-                                    'ip'       : LaunchConfiguration('interrogatorIP'),
+                                    'ip'       : LaunchConfiguration('ip'),
                                     'numCH'    : LaunchConfiguration('numCH'),
                                     'numAA'    : LaunchConfiguration('numAA'),
                                     'paramFile': LaunchConfiguration('paramFile'),
@@ -52,8 +58,9 @@ def generate_launch_description():
             ),
             condition=conditions.LaunchConfigurationEquals( 'sim_level_interrogator', "2" ),
             launch_arguments = {
-                                    'ip'       : LaunchConfiguration('interrogatorIP'),
-                                    'paramFile': LaunchConfiguration('paramFile'),
+                                    'ip'             : LaunchConfiguration('ip'),
+                                    'paramFile'      : LaunchConfiguration('paramFile'),
+                                    'needleParamFile': LaunchConfiguration('needleParamFile')
                                 }.items()
     )
 
@@ -63,6 +70,7 @@ def generate_launch_description():
     ld.add_action(ros_paramfile_arg)
     ld.add_action(interrogator_ip_arg)
     ld.add_action(num_samples_arg)
+    ld.add_action(needle_paramfile_arg)
 
     ld.add_action(demo_num_chs_arg)
     ld.add_action(demo_num_aas_arg)

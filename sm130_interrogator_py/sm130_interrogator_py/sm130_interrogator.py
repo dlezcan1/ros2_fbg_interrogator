@@ -226,14 +226,14 @@ class FBGInterrogatorNode( Node ):
 
     # parsed_peaks_to_msg
 
-    def process_signals( self, peak_signals: dict ) -> dict:
+    def process_signals( self, peak_signals, temp_comp: bool = False ) -> dict:
         """ Method to perform the signal processing
-
-        ( copied from hyperion_talker.py file from ros2_hyperion_interrogator github repo )
 
             This includes:
                 - Base wavelength shifting
+                - NOTIMPLEMENTED: Temperature compensation (if set)
 
+            Including
         """
         proc_signals = { }
 
@@ -246,21 +246,29 @@ class FBGInterrogatorNode( Node ):
 
             # try
 
-            except KeyError as e:
+            except Exception as e:
+                # self.get_logger().warning(No)
                 continue
+            # except
 
-            # except KeyError
-
-            except ValueError as e:
-                self.get_logger().warn( 
-                    f"CH {ch_num} has {peaks.size} peaks, "
-                    f"but {self.ref_wavelengths[ch_num].size} ref peaks! "
-                    "Processed peaks cannot be published."
-                )
-
-            # except ValueError
- 
         # for
+
+        # temperature compensation 
+        if temp_comp:
+            try:
+                mean_shifts = np.vstack( peak_signals.values() ).mean( axis=0 )
+
+                for ch_num in proc_signals.keys():
+                    proc_signals[ ch_num ][ 'processed' ] -= mean_shifts
+
+                # for
+
+            except:
+                self.get_logger().warning( "Unable to perform temperature compensation for signal processing." )
+
+            # except
+
+        # if
 
         return proc_signals
 

@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <chrono>
+#include <string>
 
 #define INTERROGATOR_PORT_SM130 1852
 #define INTERROGATOR_MAX_CHANNELS 4

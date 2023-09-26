@@ -1,6 +1,6 @@
 #include "Interrogator.h"
-#include <string>
 #include <bitset>
+#include <stdexcept>
 
 #include <sys/time.h>
 
